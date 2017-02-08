@@ -2,6 +2,7 @@ import React from 'react'
 import WeatherForm from 'WeatherForm'
 import WeatherMessage from 'WeatherMessage'
 import openWeatherMap from 'openWeatherMap'
+import ErrorModal from 'ErrorModal'
 
 var Weather = React.createClass({
   getInitialState: function(){
@@ -14,7 +15,8 @@ var Weather = React.createClass({
     var that = this;
     this.setState({
       message: "",
-      isLoading: true
+      isLoading: true,
+      errorMessage: undefined
     });
     openWeatherMap.getTemp(city).then(function(temp){
       that.setState({
@@ -22,11 +24,28 @@ var Weather = React.createClass({
         isLoading: false
       });
     }, function(errorMessage){
-      alert(errorMessage);
+      that.setState({
+        errorMessage: errorMessage
+      });
     });
+  },
+  componentDidMount: function(){
+    var city = this.props.location.query.location;
+    if(city && city.length > 0){
+      this.fetchNewCity(city);
+      window.location.hash = '#/';
+    }
+  },
+  componentWillReceiveProps: function(newProps){
+    var city = newProps.location.query.location;
+    if(city && city.length > 0){
+      this.fetchNewCity(city);
+      window.location.hash = '#/';
+    }
   },
   render: function(){
     var isLoading = this.state.isLoading;
+    var errorMessage = this.state.errorMessage;
     var that = this;
     function renderMessage(){
       if(isLoading){
@@ -35,11 +54,18 @@ var Weather = React.createClass({
         return <WeatherMessage message={that.state.message}/>;
       }
     };
+
+    function renderError(){
+      if(typeof errorMessage == "string"){
+        return (<ErrorModal/>);
+      }
+    };
+
     return(
       <div>
-        <h3>Weather component</h3>
         <WeatherForm callNewCity={this.fetchNewCity}/>
         {renderMessage()}
+        {renderError()}
       </div>
     );
   }
